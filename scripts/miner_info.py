@@ -105,6 +105,7 @@ def make_options_dictionary(options_dict):
 	options_dict["ds"] = "GetDSCommittee"
 	options_dict["health"] = "healthcheck"
 	options_dict["state"] = "GetNodeState"
+	options_dict["sync_type"] = "GetSyncTypeString"
 	options_dict["checktxn"] = "IsTxnInMemPool"
 	options_dict["whitelist_add"] = "AddToBlacklistExclusion"
 	options_dict["whitelist_remove"] = "RemoveFromBlacklistExclusion"

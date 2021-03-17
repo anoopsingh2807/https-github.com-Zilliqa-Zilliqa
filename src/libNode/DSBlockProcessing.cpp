@@ -370,6 +370,8 @@ bool Node::ProcessVCDSBlocksMessage(
     [[gnu::unused]] const unsigned char& startByte) {
   LOG_MARKER();
 
+  m_mediator.m_lookup->UpdateAllSeeds();
+
   unsigned int oldNumShards = m_mediator.m_ds->GetNumShards();
 
   lock_guard<mutex> g(m_mutexDSBlock);
@@ -826,7 +828,6 @@ bool Node::ProcessVCDSBlocksMessage(
           m_mediator.m_ds->m_shards, *m_mediator.m_DSCommittee);
     }
   }
-
   return true;
 }
 

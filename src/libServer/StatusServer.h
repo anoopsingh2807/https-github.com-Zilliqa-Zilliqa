@@ -30,6 +30,12 @@ class StatusServer : public Server,
     response = this->GetNodeState();
   }
 
+  inline virtual void GetSyncTypeStringI(const Json::Value& request,
+                                         Json::Value& response) {
+    (void)request;
+    response = this->GetSyncTypeString();
+  }
+
   inline virtual void IsTxnInMemPoolI(const Json::Value& request,
                                       Json::Value& response) {
     response = this->IsTxnInMemPool(request[0u].asString());
@@ -195,6 +201,7 @@ class StatusServer : public Server,
   bool IsIPInBlacklist(const std::string& ipAddr);
   bool RemoveIPFromBlacklist(const std::string& ipAddr);
   std::string GetNodeState();
+  std::string GetSyncTypeString();
   std::string GetLatestEpochStatesUpdated();
   std::string GetEpochFin();
   Json::Value GetDSCommittee();

@@ -23,6 +23,9 @@
 using namespace jsonrpc;
 using namespace std;
 
+#define MAKE_LITERAL_PAIR(s) \
+  { s, #s }
+
 StatusServer::StatusServer(Mediator& mediator,
                            jsonrpc::AbstractServerConnector& server)
     : Server(mediator),
@@ -46,6 +49,12 @@ StatusServer::StatusServer(Mediator& mediator,
       jsonrpc::Procedure("GetNodeState", jsonrpc::PARAMS_BY_POSITION,
                          jsonrpc::JSON_STRING, NULL),
       &StatusServer::GetNodeStateI);
+
+  this->bindAndAddMethod(
+      jsonrpc::Procedure("GetSyncTypeString", jsonrpc::PARAMS_BY_POSITION,
+                         jsonrpc::JSON_STRING, NULL),
+      &StatusServer::GetSyncTypeStringI);
+
   this->bindAndAddMethod(
       jsonrpc::Procedure("IsTxnInMemPool", jsonrpc::PARAMS_BY_POSITION,
                          jsonrpc::JSON_OBJECT, "param01", jsonrpc::JSON_STRING,
@@ -441,6 +450,22 @@ string StatusServer::GetNodeState() {
   } else {
     return m_mediator.m_ds->GetStateString();
   }
+}
+
+string StatusServer::GetSyncTypeString() {
+  static map<SyncType, string> syncTypeStrings = {
+      MAKE_LITERAL_PAIR(NO_SYNC),         MAKE_LITERAL_PAIR(NEW_SYNC),
+      MAKE_LITERAL_PAIR(NORMAL_SYNC),     MAKE_LITERAL_PAIR(DS_SYNC),
+      MAKE_LITERAL_PAIR(LOOKUP_SYNC),     MAKE_LITERAL_PAIR(RECOVERY_ALL_SYNC),
+      MAKE_LITERAL_PAIR(NEW_LOOKUP_SYNC), MAKE_LITERAL_PAIR(GUARD_DS_SYNC),
+      MAKE_LITERAL_PAIR(DB_VERIF),  // Deprecated
+      MAKE_LITERAL_PAIR(SYNC_TYPE_COUNT)};
+
+  auto syncType = m_mediator.m_lookup->GetSyncType();
+
+  return (syncTypeStrings.find(syncType) == syncTypeStrings.end())
+             ? "Unknown"
+             : syncTypeStrings.at(syncType);
 }
 
 Json::Value StatusServer::IsTxnInMemPool(const string& tranID) {

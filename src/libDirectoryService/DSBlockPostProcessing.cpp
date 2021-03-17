@@ -782,6 +782,7 @@ void DirectoryService::ProcessDSBlockConsensusWhenDone() {
 
     auto sendDSBlockToLookupNodesAndNewDSMembers =
         [this]([[gnu::unused]] const VectorOfNode& lookups,
+               [[gnu::unused]] const VectorOfNode& lookupsWithoutMul,
                const bytes& message) -> void {
       SendDSBlockToLookupNodesAndNewDSMembers(message);
     };
@@ -796,6 +797,7 @@ void DirectoryService::ProcessDSBlockConsensusWhenDone() {
     DataSender::GetInstance().SendDataToOthers(
         *m_pendingDSBlock, *(m_mediator.m_DSCommittee), m_shards, {},
         m_mediator.m_lookup->GetLookupNodes(),
+        m_mediator.m_lookup->GetLookupNodesWithoutMultipliers(),
         m_mediator.m_txBlockChain.GetLastBlock().GetBlockHash(),
         m_consensusMyID, composeDSBlockMessageForSender, false,
         sendDSBlockToLookupNodesAndNewDSMembers, sendDSBlockToShardNodes);
