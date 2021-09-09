@@ -25,6 +25,7 @@ class Mediator;
 class IsolatedServer : public LookupServer,
                        public jsonrpc::AbstractServer<IsolatedServer> {
   uint64_t m_blocknum;
+  bool m_pause{false};
   uint128_t m_gasPrice{GAS_PRICE_MIN_VALUE};
   std::atomic<uint32_t> m_timeDelta;
   std::unordered_map<uint64_t, std::vector<TxnHash>> m_txnBlockNumMap;
@@ -70,6 +71,21 @@ class IsolatedServer : public LookupServer,
                                                  Json::Value& response) {
     response = this->GetTransactionsForTxBlock(request[0u].asString());
   }
+
+  inline virtual void CheckPauseI(const Json::Value& request,
+                                  Json::Value& response) {
+    (void)request;
+    response = this->CheckPause();
+  }
+
+  inline virtual void TogglePauseI(const Json::Value& request,
+                                   Json::Value& response) {
+    (void)request;
+    response = this->TogglePause();
+  }
+
+  bool CheckPause();
+  bool TogglePause();
 
   std::string GetMinimumGasPrice();
   std::string SetMinimumGasPrice(const std::string& gasPrice);

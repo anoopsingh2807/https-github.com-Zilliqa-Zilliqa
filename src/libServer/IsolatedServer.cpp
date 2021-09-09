@@ -125,6 +125,16 @@ IsolatedServer::IsolatedServer(Mediator& mediator,
                            jsonrpc::JSON_OBJECT, NULL),
         &LookupServer::GetLatestTxBlockI);
 
+    AbstractServer<IsolatedServer>::bindAndAddMethod(
+        jsonrpc::Procedure("TogglePause", jsonrpc::PARAMS_BY_POSITION,
+                           jsonrpc::JSON_BOOLEAN, NULL),
+        &IsolatedServer::TogglePauseI);
+
+    AbstractServer<IsolatedServer>::bindAndAddMethod(
+        jsonrpc::Procedure("CheckPause", jsonrpc::PARAMS_BY_POSITION,
+                           jsonrpc::JSON_BOOLEAN, NULL),
+        &IsolatedServer::CheckPauseI);
+
     StartBlocknumIncrement();
   }
 }
@@ -225,6 +235,10 @@ Json::Value IsolatedServer::CreateTransaction(const Json::Value& _json) {
   try {
     if (!JSONConversion::checkJsonTx(_json)) {
       throw JsonRpcException(RPC_PARSE_ERROR, "Invalid Transaction JSON");
+    }
+
+    if (m_pause) {
+      throw JsonRpcException(RPC_INTERNAL_ERROR, "IsoServer is paused");
     }
 
     lock_guard<mutex> g(m_blockMutex);
@@ -456,6 +470,9 @@ bool IsolatedServer::StartBlocknumIncrement() {
   auto incrThread = [this]() mutable -> void {
     while (true) {
       this_thread::sleep_for(chrono::milliseconds(m_timeDelta));
+      if (m_pause) {
+        continue;
+      }
       PostTxBlock();
     }
   };
@@ -463,6 +480,13 @@ bool IsolatedServer::StartBlocknumIncrement() {
   DetachedFunction(1, incrThread);
   return true;
 }
+
+bool IsolatedServer::TogglePause() {
+  m_pause = !m_pause;
+  return m_pause;
+}
+
+bool IsolatedServer::CheckPause() { return m_pause; }
 
 TxBlock IsolatedServer::GenerateTxBlock() {
   uint numtxns;
