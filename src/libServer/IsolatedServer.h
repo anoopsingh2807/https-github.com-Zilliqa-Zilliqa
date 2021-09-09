@@ -39,6 +39,7 @@ class IsolatedServer : public LookupServer,
   void PostTxBlock();
 
  public:
+  std::string m_uuid;
   IsolatedServer(Mediator& mediator, jsonrpc::AbstractServerConnector& server,
                  const uint64_t& blocknum, const uint32_t& timeDelta);
   ~IsolatedServer() = default;
@@ -74,18 +75,16 @@ class IsolatedServer : public LookupServer,
 
   inline virtual void CheckPauseI(const Json::Value& request,
                                   Json::Value& response) {
-    (void)request;
-    response = this->CheckPause();
+    response = this->CheckPause(request[0u].asString());
   }
 
   inline virtual void TogglePauseI(const Json::Value& request,
                                    Json::Value& response) {
-    (void)request;
-    response = this->TogglePause();
+    response = this->TogglePause(request[0u].asString());
   }
 
-  bool CheckPause();
-  bool TogglePause();
+  bool CheckPause(std::string uuid);
+  bool TogglePause(std::string uuid);
 
   std::string GetMinimumGasPrice();
   std::string SetMinimumGasPrice(const std::string& gasPrice);

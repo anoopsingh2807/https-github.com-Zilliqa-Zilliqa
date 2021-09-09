@@ -127,12 +127,14 @@ IsolatedServer::IsolatedServer(Mediator& mediator,
 
     AbstractServer<IsolatedServer>::bindAndAddMethod(
         jsonrpc::Procedure("TogglePause", jsonrpc::PARAMS_BY_POSITION,
-                           jsonrpc::JSON_BOOLEAN, NULL),
+                           jsonrpc::JSON_BOOLEAN, "param01",
+                           jsonrpc::JSON_STRING, NULL),
         &IsolatedServer::TogglePauseI);
 
     AbstractServer<IsolatedServer>::bindAndAddMethod(
         jsonrpc::Procedure("CheckPause", jsonrpc::PARAMS_BY_POSITION,
-                           jsonrpc::JSON_BOOLEAN, NULL),
+                           jsonrpc::JSON_BOOLEAN, "param01",
+                           jsonrpc::JSON_STRING, NULL),
         &IsolatedServer::CheckPauseI);
 
     StartBlocknumIncrement();
@@ -481,12 +483,20 @@ bool IsolatedServer::StartBlocknumIncrement() {
   return true;
 }
 
-bool IsolatedServer::TogglePause() {
+bool IsolatedServer::TogglePause(string uuid) {
+  if (uuid != m_uuid) {
+    throw JsonRpcException(RPC_INVALID_ADDRESS_OR_KEY, "Invalid UUID");
+  }
   m_pause = !m_pause;
   return m_pause;
 }
 
-bool IsolatedServer::CheckPause() { return m_pause; }
+bool IsolatedServer::CheckPause(string uuid) {
+  if (uuid != m_uuid) {
+    throw JsonRpcException(RPC_INVALID_ADDRESS_OR_KEY, "Invalid UUID");
+  }
+  return m_pause;
+}
 
 TxBlock IsolatedServer::GenerateTxBlock() {
   uint numtxns;
