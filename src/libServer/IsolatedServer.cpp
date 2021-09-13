@@ -483,7 +483,7 @@ bool IsolatedServer::StartBlocknumIncrement() {
   return true;
 }
 
-bool IsolatedServer::TogglePause(string uuid) {
+bool IsolatedServer::TogglePause(const string& uuid) {
   if (uuid != m_uuid) {
     throw JsonRpcException(RPC_INVALID_ADDRESS_OR_KEY, "Invalid UUID");
   }
@@ -491,7 +491,7 @@ bool IsolatedServer::TogglePause(string uuid) {
   return m_pause;
 }
 
-bool IsolatedServer::CheckPause(string uuid) {
+bool IsolatedServer::CheckPause(const string& uuid) {
   if (uuid != m_uuid) {
     throw JsonRpcException(RPC_INVALID_ADDRESS_OR_KEY, "Invalid UUID");
   }

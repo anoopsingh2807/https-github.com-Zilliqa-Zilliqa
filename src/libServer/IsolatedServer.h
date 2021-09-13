@@ -83,8 +83,8 @@ class IsolatedServer : public LookupServer,
     response = this->TogglePause(request[0u].asString());
   }
 
-  bool CheckPause(std::string uuid);
-  bool TogglePause(std::string uuid);
+  bool CheckPause(const std::string& uuid);
+  bool TogglePause(const std::string& uuid);
 
   std::string GetMinimumGasPrice();
   std::string SetMinimumGasPrice(const std::string& gasPrice);
