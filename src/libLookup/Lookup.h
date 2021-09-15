@@ -233,6 +233,10 @@ class Lookup : public Executable {
 
   void SendMessageToRandomSeedNode(const bytes& message) const;
 
+  // send message immediately to random selected seed node without using p2pcomm
+  // queue
+  void SendMessageNoQueueToRandomSeedNode(const bytes& message) const;
+
   void SendMessageToRandomL2lDataProvider(const bytes& message) const;
 
   void RectifyTxnShardMap(const uint32_t, const uint32_t);

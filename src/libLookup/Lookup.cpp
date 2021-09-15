@@ -1305,6 +1305,57 @@ void Lookup::SendMessageToRandomSeedNode(const bytes& message) const {
   P2PComm::GetInstance().SendMessage(notBlackListedSeedNodes[index], message);
 }
 
+void Lookup::SendMessageNoQueueToRandomSeedNode(const bytes& message) const {
+  LOG_MARKER();
+
+  VectorOfPeer notBlackListedSeedNodes;
+  {
+    lock_guard<mutex> lock(m_mutexSeedNodes);
+    if (0 == m_seedNodes.size()) {
+      LOG_GENERAL(WARNING, "Seed nodes are empty");
+      return;
+    }
+
+    for (const auto& node : m_seedNodes) {
+      auto seedNodeIpToSend = TryGettingResolvedIP(node.second);
+      if (!Blacklist::GetInstance().Exist(seedNodeIpToSend) &&
+          (m_mediator.m_selfPeer.GetIpAddress() != seedNodeIpToSend)) {
+        notBlackListedSeedNodes.push_back(
+            Peer(seedNodeIpToSend, node.second.GetListenPortHost()));
+      }
+    }
+  }
+
+  if (notBlackListedSeedNodes.empty()) {
+    LOG_GENERAL(WARNING,
+                "All the seed nodes are blacklisted, please check you network "
+                "connection.");
+    return;
+  }
+
+  uint32_t retry_counter = 0;
+  while (++retry_counter <= RETRY_OTHERSEED_COUNT) {
+    auto index = RandomGenerator::GetRandomInt(notBlackListedSeedNodes.size());
+    if (P2PComm::GetInstance().SendMessageNoQueue(
+            notBlackListedSeedNodes[index], message)) {
+      LOG_GENERAL(WARNING, "Faied sending msg to "
+                               << notBlackListedSeedNodes[index]
+                               << " , will try next available seed node");
+      notBlackListedSeedNodes.erase(notBlackListedSeedNodes.begin() + index);
+      if (notBlackListedSeedNodes.empty()) {
+        LOG_GENERAL(WARNING, "No further seed nodes are available now!");
+        return;
+      }
+    } else {
+      LOG_GENERAL(INFO, "Sent msg to " << notBlackListedSeedNodes[index]);
+      return;
+    }
+  }
+  if (retry_counter > RETRY_OTHERSEED_COUNT) {
+    LOG_GENERAL(WARNING, "Gaveup sending msg to seed node after retries!");
+  }
+}
+
 bool Lookup::IsWhitelistedExtSeed(const PubKey& pubKey, const Peer& from,
                                   const unsigned char& startByte) {
   bool isWhiteListed = false;
