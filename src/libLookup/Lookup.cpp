@@ -4810,7 +4810,8 @@ bool Lookup::ToBlockMessage(unsigned char ins_byte) {
           ins_byte != LookupInstructionType::SETSTATEDELTAFROMSEED &&
           ins_byte != LookupInstructionType::SETSTATEDELTASFROMSEED &&
           ins_byte != LookupInstructionType::SETDIRBLOCKSFROMSEED &&
-          ins_byte != LookupInstructionType::SETMINERINFOFROMSEED);
+          ins_byte != LookupInstructionType::SETMINERINFOFROMSEED &&
+          ins_byte != LookupInstructionType::FORWARDTXN); // Allow fwded txn to be buffered 
 }
 
 bytes Lookup::ComposeGetOfflineLookupNodes() {
