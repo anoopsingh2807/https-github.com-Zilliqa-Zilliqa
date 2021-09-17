@@ -97,6 +97,16 @@ StatusServer::StatusServer(Mediator& mediator,
                          NULL),
       &StatusServer::RemoveIPFromBlacklistI);
   this->bindAndAddMethod(
+      jsonrpc::Procedure("AddToFwdTxnExcludedSeeds",
+                         jsonrpc::PARAMS_BY_POSITION, jsonrpc::JSON_BOOLEAN,
+                         "param01", jsonrpc::JSON_STRING, NULL),
+      &StatusServer::AddToFwdTxnExcludedSeedsI);
+  this->bindAndAddMethod(
+      jsonrpc::Procedure("RemoveFromFwdTxnExcludedSeeds",
+                         jsonrpc::PARAMS_BY_POSITION, jsonrpc::JSON_BOOLEAN,
+                         "param01", jsonrpc::JSON_STRING, NULL),
+      &StatusServer::RemoveFromFwdTxnExcludedSeedsI);
+  this->bindAndAddMethod(
       jsonrpc::Procedure("GetDSCommittee", jsonrpc::PARAMS_BY_POSITION,
                          jsonrpc::JSON_OBJECT, NULL),
       &StatusServer::GetDSCommitteeI);
@@ -422,6 +432,51 @@ bool StatusServer::RemoveFromBlacklistExclusion(const string& ipAddr) {
                              "Could not remove IP Address from exclusion list");
     }
 
+    return true;
+
+  } catch (const JsonRpcException& je) {
+    throw je;
+  } catch (const exception& e) {
+    LOG_GENERAL(WARNING, "[Error]: " << e.what());
+    throw JsonRpcException(RPC_MISC_ERROR, "Unable to process");
+  }
+}
+
+bool StatusServer::AddToFwdTxnExcludedSeeds(const string& ipAddr) {
+  try {
+    uint128_t numIP;
+
+    if (!IPConverter::ToNumericalIPFromStr(ipAddr, numIP)) {
+      throw JsonRpcException(RPC_INVALID_PARAMETER,
+                             "IP Address provided not valid");
+    }
+
+    if (!m_mediator.m_lookup->AddToFwdTxnExcludedSeeds(numIP)) {
+      throw JsonRpcException(
+          RPC_INVALID_PARAMETER,
+          "Could not add IP Address in exclusion list, already present");
+    }
+
+    return true;
+
+  } catch (const JsonRpcException& je) {
+    throw je;
+  } catch (const exception& e) {
+    LOG_GENERAL(WARNING, "[Error]: " << e.what());
+    throw JsonRpcException(RPC_MISC_ERROR, "Unable to process");
+  }
+}
+
+bool StatusServer::RemoveFromFwdTxnExcludedSeeds(const string& ipAddr) {
+  try {
+    uint128_t numIP;
+
+    if (!IPConverter::ToNumericalIPFromStr(ipAddr, numIP)) {
+      throw JsonRpcException(RPC_INVALID_PARAMETER,
+                             "IP Address provided not valid");
+    }
+
+    m_mediator.m_lookup->RemoveFromFwdTxnExcludedSeeds(numIP);
     return true;
 
   } catch (const JsonRpcException& je) {

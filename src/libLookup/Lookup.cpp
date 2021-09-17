@@ -39,7 +39,6 @@
 #include "libData/BlockData/Block.h"
 #include "libMediator/Mediator.h"
 #include "libMessage/Messenger.h"
-#include "libNetwork/Blacklist.h"
 #include "libNetwork/Guard.h"
 #include "libNetwork/P2PComm.h"
 #include "libPOW/pow.h"
@@ -351,6 +350,16 @@ bool Lookup::AddToWhitelistExtSeed(const PubKey& pubKey) {
     return BlockStorage::GetBlockStorage().PutExtSeedPubKey(pubKey);
   }
   return false;
+}
+
+bool Lookup::AddToFwdTxnExcludedSeeds(const uint128_t& ipAddress) {
+  lock_guard<mutex> g(m_mutexFwdTxnExcludedSeeds);
+  return m_fwdTxnExcludedSeeds.emplace(ipAddress).second;
+}
+
+bool Lookup::RemoveFromFwdTxnExcludedSeeds(const uint128_t& ipAddress) {
+  lock_guard<mutex> g(m_mutexFwdTxnExcludedSeeds);
+  return m_fwdTxnExcludedSeeds.erase(ipAddress);
 }
 
 bool Lookup::RemoveFromWhitelistExtSeed(const PubKey& pubKey) {
@@ -1310,7 +1319,9 @@ void Lookup::SendMessageNoQueueToRandomSeedNode(const bytes& message) const {
 
   VectorOfPeer notBlackListedSeedNodes;
   {
-    lock_guard<mutex> lock(m_mutexSeedNodes);
+    lock(m_mutexSeedNodes, m_mutexFwdTxnExcludedSeeds);
+    lock_guard<mutex> lock1(m_mutexSeedNodes, adopt_lock);
+    lock_guard<mutex> lock2(m_mutexFwdTxnExcludedSeeds, adopt_lock);
     if (0 == m_seedNodes.size()) {
       LOG_GENERAL(WARNING, "Seed nodes are empty");
       return;
@@ -1319,6 +1330,7 @@ void Lookup::SendMessageNoQueueToRandomSeedNode(const bytes& message) const {
     for (const auto& node : m_seedNodes) {
       auto seedNodeIpToSend = TryGettingResolvedIP(node.second);
       if (!Blacklist::GetInstance().Exist(seedNodeIpToSend) &&
+          (m_fwdTxnExcludedSeeds.count(seedNodeIpToSend) == 0) &&
           (m_mediator.m_selfPeer.GetIpAddress() != seedNodeIpToSend)) {
         notBlackListedSeedNodes.push_back(
             Peer(seedNodeIpToSend, node.second.GetListenPortHost()));
@@ -4811,7 +4823,8 @@ bool Lookup::ToBlockMessage(unsigned char ins_byte) {
           ins_byte != LookupInstructionType::SETSTATEDELTASFROMSEED &&
           ins_byte != LookupInstructionType::SETDIRBLOCKSFROMSEED &&
           ins_byte != LookupInstructionType::SETMINERINFOFROMSEED &&
-          ins_byte != LookupInstructionType::FORWARDTXN); // Allow fwded txn to be buffered 
+          ins_byte != LookupInstructionType::FORWARDTXN);  // Allow fwded txn to
+                                                           // be buffered
 }
 
 bytes Lookup::ComposeGetOfflineLookupNodes() {
